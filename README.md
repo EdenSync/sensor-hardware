@@ -16,15 +16,7 @@ Each sensor node is responsible for collecting environmental data and transmitti
 
 #### **Sensors**
 
-- **Essential Sensors**:
-  - **Soil Moisture**: Capacitive sensor for accurate soil moisture readings.
-  - **Temperature**: For monitoring ambient temperature.
-  - **Environmental Humidity**: To track humidity levels in the environment.
-  - **Soil Electrical Conductivity (EC)**: Measures soil salinity and nutrients.
-  - **Light Intensity (LUX)**: For general light level measurement.
-- **Optional Advanced Sensors**:
-  - **PAR (Photosynthetically Active Radiation)**: For more detailed light information.
-  - **Soil pH**: To monitor the pH levels of the soil.
+For details on the sensor choices and implementation, see the [Design Document](docs/DESIGN.md).
 
 #### **Power Options**
 
