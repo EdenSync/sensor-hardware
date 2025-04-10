@@ -23,32 +23,29 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.ADD_TO_PROJECT_PAT }}
         run: |
-          PR_NUMBER="${{ github.event.pull_request.number }}"
-          REPO_OWNER="${{ github.repository_owner }}"
-          REPO_NAME="${{ github.event.repository.name }}"
-          echo "🔍 Querying linked issues for PR #$PR_NUMBER in $REPO_OWNER/$REPO_NAME"
-          read -r -d '' QUERY <<EOF
-          {
-            "query": "query { repository(owner: \\"$REPO_OWNER\\", name: \\"$REPO_NAME\\") { pullRequest(number: $PR_NUMBER) { closingIssuesReferences(first: 1, userLinkedOnly: true) { nodes { number id } } } } }"
-          }
-          EOF
+          echo "🔍 Querying manually linked issues via GraphQL..."
           response=$(curl -s \
             -H "Authorization: Bearer ${GH_TOKEN}" \
             -H "Content-Type: application/json" \
-            -d "$QUERY" \
+            -d "{\"query\":\"query { repository(owner: \\\"${{ github.repository_owner }}\\\", name: \\\"${{ github.event.repository.name }}\\\") { pullRequest(number: ${{ github.event.pull_request.number }}) { closingIssuesReferences(first: 1) { nodes { number id } } } } }\"}" \
             https://api.github.com/graphql)
+    
           echo "📦 Raw GraphQL Response:"
-          echo "$response" | jq .
-          ISSUE_NUMBER=$(echo "$response" | jq -r '.data.repository.pullRequest.closingIssuesReferences.nodes[0].number // empty')
-          ISSUE_ID=$(echo "$response" | jq -r '.data.repository.pullRequest.closingIssuesReferences.nodes[0].id // empty')
-          if [[ -n "$ISSUE_NUMBER" && -n "$ISSUE_ID" ]]; then
-            echo "📎 Found linked issue: #$ISSUE_NUMBER (ID: $ISSUE_ID)"
-            echo "ISSUE_NUMBER=$ISSUE_NUMBER" >> "$GITHUB_ENV"
-            echo "ISSUE_ID=$ISSUE_ID" >> "$GITHUB_ENV"
-          else
+          echo "$response"
+    
+          ISSUE_NUMBER=$(echo "$response" | jq -r '.data.repository.pullRequest.closingIssuesReferences.nodes[0].number')
+          ISSUE_ID=$(echo "$response" | jq -r '.data.repository.pullRequest.closingIssuesReferences.nodes[0].id')
+    
+          if [[ "$ISSUE_NUMBER" == "null" || -z "$ISSUE_NUMBER" ]]; then
             echo "⚠️ No manually linked issue found via closingIssuesReferences"
-            exit 1
+            exit 0
           fi
+    
+          echo "📎 Detected issue number: $ISSUE_NUMBER"
+          echo "🐛 Issue node ID: $ISSUE_ID"
+    
+          echo "ISSUE_NUMBER=$ISSUE_NUMBER" >> "$GITHUB_ENV"
+          echo "ISSUE_ID=$ISSUE_ID" >> "$GITHUB_ENV"
       
       - name: Get issue node ID
         id: get_issue_node
