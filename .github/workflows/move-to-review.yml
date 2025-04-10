@@ -1,0 +1,62 @@
+---
+name: Move linked issue to "In review" when PR has reviewers
+
+on:
+  pull_request:
+    types: [review_requested]
+
+jobs:
+  move-connected-issue-to-in-review:
+    runs-on: ubuntu-latest
+
+    env:
+      PROJECT_NODE_ID: "PVT_kwDODB6YIc4A1WtC"
+      STATUS_FIELD_ID: "PVTSSF_lADODB6YIc4A1WtCzgq1roQ"
+      IN_REVIEW_OPTION_ID: "df73e18b"
+      
+    steps:
+      - name: Extract linked issue number
+        id: extract
+        run: |
+          echo "🔍 Full PR Body for debugging:"
+          cat "$GITHUB_EVENT_PATH" | jq -r '.pull_request.body'
+
+          BODY="$(jq -r '.pull_request.body' "$GITHUB_EVENT_PATH")"
+          ISSUE_NUMBER=$(echo "$BODY" | grep -Eo '#[0-9]+' | head -n 1 | tr -d '#')
+          echo "📎 Detected issue number: $ISSUE_NUMBER"
+          echo "ISSUE_NUMBER=$ISSUE_NUMBER" >> $GITHUB_ENV
+
+      - name: Get issue node ID
+        id: get_issue_node
+        if: env.ISSUE_NUMBER != ''
+        run: |
+          curl -s -H "Authorization: Bearer ${{ secrets.ADD_TO_PROJECT_PAT }}" \
+            -H "Content-Type: application/json" \
+            -d '{"query":"query { repository(owner: \"${{ github.repository_owner }}\", name: \"${{ github.event.repository.name }}\") { issue(number: '"$ISSUE_NUMBER"') { id }}}"}' \
+            https://api.github.com/graphql > response.json
+
+          ISSUE_ID=$(jq -r '.data.repository.issue.id' response.json)
+          echo "ISSUE_ID=$ISSUE_ID" >> $GITHUB_ENV
+
+      - name: Get project item ID for issue
+        id: get_project_item
+        if: env.ISSUE_NUMBER != ''
+        run: |
+          curl -s -H "Authorization: Bearer ${{ secrets.ADD_TO_PROJECT_PAT }}" \
+            -H "Content-Type: application/json" \
+            -d '{"query":"query { node(id: \"${{ env.PROJECT_NODE_ID }}\") { ... on ProjectV2 { items(first: 100) { nodes { id content { ... on Issue { id number } } } } } } }"}' \
+            https://api.github.com/graphql > response.json
+
+          ITEM_ID=$(jq -r --arg ISSUE_ID "$ISSUE_ID" '.data.node.items.nodes[] | select(.content.id == $ISSUE_ID) | .id' response.json)
+          echo "ITEM_ID=$ITEM_ID" >> $GITHUB_ENV
+
+      - name: Move issue to "In review"
+        if: env.ITEM_ID != ''
+        run: |
+          curl -s -X POST \
+            -H "Authorization: Bearer ${{ secrets.ADD_TO_PROJECT_PAT }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "query": "mutation { updateProjectV2ItemFieldValue(input: { projectId: \"${{ env.PROJECT_NODE_ID }}\", itemId: \"'"$ITEM_ID"'\", fieldId: \"${{ env.STATUS_FIELD_ID }}\", value: { singleSelectOptionId: \"${{ env.IN_REVIEW_OPTION_ID }}\" }}) { projectV2Item { id }}}"
+            }' \
+            https://api.github.com/graphql
