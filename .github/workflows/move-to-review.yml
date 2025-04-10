@@ -3,7 +3,7 @@ name: Move linked issue to "In review" when PR has reviewers
 
 permissions:
   contents: read
-
+ 
 on:
   pull_request:
     types: [review_requested]
