@@ -4,8 +4,8 @@ This document outlines the wiring and pin assignments for connecting various env
 
 ## Pin Assignments
 
-- **P1.06** → Analog Output of HW-101 Capacitive Soil Moisture Sensor
-- **P1.04** → Analog Output of Resistive Soil Moisture (EC) Sensor
+- **P0.02** → Analog Output of HW-101 Capacitive Soil Moisture Sensor
+- **P0.29** → Analog Output of Resistive Soil Moisture (EC) Sensor
 - **P1.00 (SDA)** → I2C Data Line shared between BME280 and GY-302
 - **P0.11 (SCL)** → I2C Clock Line shared between BME280 and GY-302
 
@@ -38,8 +38,8 @@ flowchart TD
     PWR33[3V3 Power]
     GND[Ground]
 
-    NRF -- P1.06 (AO) --- HW_101
-    NRF -- P1.04 (AO) --- RHS
+    NRF -- P0.02 (AO) --- HW_101
+    NRF -- P0.29 (AO) --- RHS
     NRF -- P1.00 (SDA) --> SDA_SPLIT
     SDA_SPLIT --> BME280
     SDA_SPLIT --> GY302
