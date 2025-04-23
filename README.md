@@ -17,6 +17,7 @@ Each sensor node is responsible for collecting environmental data and transmitti
 #### **Sensors**
 
 For details on the sensor choices and implementation, see the [Design Document](docs/DESIGN.md).
+For the MVP setup using a breadboard, see the [MVP Document](docs/MVP_SETUP.md).
 
 #### **Power Options**
 
