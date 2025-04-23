@@ -40,10 +40,10 @@ flowchart TD
 
     NRF -- P1.06 (AO) --- HW_101
     NRF -- P1.04 (AO) --- RHS
-    NRF -- P0.24 --> SDA_SPLIT
+    NRF -- P0.24 (SDA) --> SDA_SPLIT
     SDA_SPLIT --> BME280
     SDA_SPLIT --> GY302
-    NRF -- P0.22 --> SCL_SPLIT
+    NRF -- P0.22 (SCL) --> SCL_SPLIT
     SCL_SPLIT --> BME280
     SCL_SPLIT --> GY302
 
